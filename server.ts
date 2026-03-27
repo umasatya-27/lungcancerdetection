@@ -7,7 +7,7 @@ import { spawn } from "child_process";
 import fs from "fs";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({

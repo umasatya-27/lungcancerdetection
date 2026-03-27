@@ -163,8 +163,8 @@ export default function App() {
               <div className="relative">
                 <div className="absolute -inset-4 bg-blue-600/10 blur-3xl rounded-full"></div>
                 <img 
-                  src="https://picsum.photos/seed/medical/800/600" 
-                  alt="Medical Tech" 
+                  src="https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=800&h=600&auto=format&fit=crop" 
+                  alt="Lung CT Scan Analysis" 
                   className="relative rounded-3xl shadow-2xl border border-white/20"
                   referrerPolicy="no-referrer"
                 />
