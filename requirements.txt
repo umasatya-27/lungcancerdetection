@@ -2,3 +2,5 @@ pillow
 numpy
 opencv-python-headless
 onnxruntime
+torch
+torchvision

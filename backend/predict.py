@@ -30,8 +30,10 @@ def predict():
     smoking_years = float(sys.argv[4])
 
     try:
-        # Find the ONNX model
+        # Find the model (Prefer ONNX, fallback to PTH)
         model_path = "model.onnx"
+        is_onnx = True
+        
         if not os.path.exists(model_path):
             # Try searching in subfolders
             for root, dirs, files in os.walk("."):
@@ -40,20 +42,53 @@ def predict():
                     break
         
         if not os.path.exists(model_path):
-            error_msg = "model.onnx not found. Please convert your .pth file to ONNX and upload it to your repository."
+            # Try fallback to .pth
+            is_onnx = False
+            model_path = "clean_model.pth"
+            if not os.path.exists(model_path):
+                for root, dirs, files in os.walk("."):
+                    if "clean_model.pth" in files:
+                        model_path = os.path.join(root, "clean_model.pth")
+                        break
+        
+        if not os.path.exists(model_path):
+            error_msg = "Model file not found. Please upload 'model.onnx' or 'clean_model.pth' to your repository."
             print(json.dumps({"error": error_msg}))
-            sys.exit(0) # Exit with 0 so the server can parse the JSON error message
+            sys.exit(0)
 
-        # Load ONNX model (Very light on RAM!)
-        session = ort.InferenceSession(model_path)
-        
-        # Preprocess
-        img_tensor, rgb_img = preprocess_image(image_path)
-        meta_tensor = np.array([[age, gender, smoking_years]], dtype=np.float32)
-        
-        # Run Inference
-        outputs = session.run(None, {'image': img_tensor, 'meta': meta_tensor})
-        logits = outputs[0][0]
+        if is_onnx:
+            # Load ONNX model
+            session = ort.InferenceSession(model_path)
+            img_tensor, rgb_img = preprocess_image(image_path)
+            meta_tensor = np.array([[age, gender, smoking_years]], dtype=np.float32)
+            outputs = session.run(None, {'image': img_tensor, 'meta': meta_tensor})
+            logits = outputs[0][0]
+        else:
+            # Fallback to Torch (Requires torch to be installed on server)
+            # Note: This is a backup, ONNX is preferred for speed
+            import torch
+            import torchvision.models as models
+            
+            class FusionModel(torch.nn.Module):
+                def __init__(self):
+                    super().__init__()
+                    self.cnn = models.resnet50(weights=None)
+                    self.cnn.fc = torch.nn.Identity()
+                    self.meta_branch = torch.nn.Sequential(torch.nn.Linear(3, 64), torch.nn.ReLU())
+                    self.fc = torch.nn.Sequential(torch.nn.Linear(2048 + 64, 512), torch.nn.ReLU(), torch.nn.Linear(512, 4))
+                def forward(self, x, m):
+                    return self.fc(torch.cat((self.cnn(x), self.meta_branch(m)), dim=1))
+
+            model = FusionModel()
+            model.load_state_dict(torch.load(model_path, map_location='cpu'))
+            model.eval()
+            
+            img_tensor, rgb_img = preprocess_image(image_path)
+            img_torch = torch.from_numpy(img_tensor)
+            meta_torch = torch.from_numpy(np.array([[age, gender, smoking_years]], dtype=np.float32))
+            
+            with torch.no_grad():
+                logits = model(img_torch, meta_torch).numpy()[0]
         
         # Softmax
         exp_logits = np.exp(logits - np.max(logits))
