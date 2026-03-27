@@ -274,33 +274,21 @@ def predict():
                 if loaded_object is not None:
                     if isinstance(loaded_object, dict):
                         state_dict = loaded_object.get('state_dict', loaded_object)
-                        # Check for key mismatch
-                        model_keys = set(model.state_dict().keys())
-                        loaded_keys = set(state_dict.keys())
-                        missing = model_keys - loaded_keys
-                        unexpected = loaded_keys - model_keys
-                        
-                        print(f"DEBUG: Model has {len(model_keys)} keys, Loaded dict has {len(loaded_keys)} keys", file=sys.stderr, flush=True)
-                        
-                        if missing:
-                            print(f"DEBUG: Missing keys (first 10): {list(missing)[:10]}", file=sys.stderr, flush=True)
-                        if unexpected:
-                            print(f"DEBUG: Unexpected keys (first 10): {list(unexpected)[:10]}", file=sys.stderr, flush=True)
-                        
-                        if not missing and not unexpected:
-                            print("DEBUG: PERFECT MATCH! All keys loaded successfully.", file=sys.stderr, flush=True)
-                        
                         model.load_state_dict(state_dict, strict=False)
-                        print("DEBUG: Loaded state_dict successfully!", file=sys.stderr, flush=True)
                     elif hasattr(loaded_object, 'state_dict'):
                         model.load_state_dict(loaded_object.state_dict(), strict=False)
-                        print("DEBUG: Loaded from model object state_dict", file=sys.stderr, flush=True)
                     else:
                         model = loaded_object
-                        print("DEBUG: Loaded full model object", file=sys.stderr, flush=True)
+                    
+                    # EXTREME MEMORY FIX: Dynamic Quantization
+                    # This shrinks the model's RAM usage by ~4x without losing much accuracy
+                    print("DEBUG: Applying Dynamic Quantization to save RAM...", file=sys.stderr, flush=True)
+                    model = torch.quantization.quantize_dynamic(
+                        model, {nn.Linear}, dtype=torch.qint8
+                    )
                     
                     weights_loaded = True
-                    print("DEBUG: SUCCESS! AI is now using your real model.", file=sys.stderr, flush=True)
+                    print("DEBUG: SUCCESS! AI is now using your SHRUNK model.", file=sys.stderr, flush=True)
             except Exception as e:
                 print(f"DEBUG: CRITICAL ERROR loading weights: {str(e)}", file=sys.stderr, flush=True)
                 traceback.print_exc(file=sys.stderr)
