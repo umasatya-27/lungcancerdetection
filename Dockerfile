@@ -21,9 +21,10 @@ RUN npm install
 # Copy Python requirements and install Python dependencies
 # We use the CPU-only version of torch to save space and memory
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch
-RUN pip3 install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torchvision
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Added --break-system-packages to allow installation in this environment
+RUN pip3 install --no-cache-dir --break-system-packages --extra-index-url https://download.pytorch.org/whl/cpu torch
+RUN pip3 install --no-cache-dir --break-system-packages --extra-index-url https://download.pytorch.org/whl/cpu torchvision
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
