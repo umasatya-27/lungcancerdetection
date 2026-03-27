@@ -106,12 +106,25 @@ def predict():
         _, buffer = cv2.imencode('.png', overlay)
         heatmap_base64 = base64.b64encode(buffer).decode('utf-8')
 
+        # Clinical Heuristic (Simplified)
+        clinical_match = "None"
+        if age > 50 and smoking_years > 15:
+            clinical_match = "Malignant"
+        elif age < 35 and smoking_years < 5:
+            clinical_match = "Normal"
+
         print(json.dumps({
             "prediction": classes[prediction_idx],
             "confidence": float(probs[prediction_idx]),
             "probabilities": {classes[i]: float(probs[i]) for i in range(4)},
             "heatmap_url": f"data:image/png;base64,{heatmap_base64}",
-            "debug": {"weights_loaded": True, "model_type": "ONNX", "input_age": age}
+            "debug": {
+                "weights_loaded": True, 
+                "model_path": model_path, 
+                "input_age": age,
+                "input_smoking": smoking_years,
+                "clinical_match": clinical_match
+            }
         }))
         
     except Exception as e:
