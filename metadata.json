@@ -1,0 +1,5 @@
+{
+  "name": "Lung Cancer Detection AI",
+  "description": "An AI-powered web application for lung cancer detection using CT scan images and patient metadata, featuring Grad-CAM visualization.",
+  "requestFramePermissions": []
+}
