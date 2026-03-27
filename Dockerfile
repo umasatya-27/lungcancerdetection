@@ -1,7 +1,7 @@
 # Use a Node base image
 FROM node:18-slim
 
-# Install Python and system dependencies for OpenCV and building packages
+# Install Python and system dependencies for OpenCV
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -15,14 +15,11 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy package files and install Node dependencies
-# We copy only package.json to avoid cross-platform lock file issues
 COPY package.json ./
 RUN npm install
 
 # Copy Python requirements and install Python dependencies
-# We use the CPU-only version of torch to save space and memory
 COPY requirements.txt ./
-# Added --break-system-packages to allow installation in this environment
 RUN pip3 install --no-cache-dir --break-system-packages --extra-index-url https://download.pytorch.org/whl/cpu torch
 RUN pip3 install --no-cache-dir --break-system-packages --extra-index-url https://download.pytorch.org/whl/cpu torchvision
 RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
