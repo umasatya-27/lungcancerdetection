@@ -1,7 +1,7 @@
-# Use a Node base image
-FROM node:18-slim
+# Use a more robust Node image
+FROM node:20-bookworm
 
-# Install Python and system dependencies for OpenCV
+# Install Python and system dependencies for OpenCV and native builds
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install Node dependencies
+# Copy ONLY package.json first
 COPY package.json ./
-RUN npm install
+
+# NUCLEAR FIX: Delete any potential lock files and force a fresh install for Linux
+RUN rm -rf node_modules package-lock.json && npm install
 
 # Copy Python requirements and install Python dependencies
 COPY requirements.txt ./
@@ -30,7 +32,7 @@ COPY . .
 # Build the frontend
 RUN npm run build
 
-# Expose the port the app runs on
+# Expose the port
 EXPOSE 3000
 
 # Start the application
