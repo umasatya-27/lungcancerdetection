@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy package files and install Node dependencies
-COPY package*.json ./
+# We copy only package.json to avoid cross-platform lock file issues
+COPY package.json ./
 RUN npm install
 
 # Copy Python requirements and install Python dependencies
