@@ -18,8 +18,14 @@ RUN npm install
 
 # Copy Python requirements and install Python dependencies
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Create virtual environment
+RUN python3 -m venv /opt/venv
 
+# Activate venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
