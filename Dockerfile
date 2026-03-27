@@ -1,35 +1,38 @@
-# Use Node base image
+# Use a Node base image
 FROM node:18-slim
 
-# Install Python + venv
+# Install Python and system dependencies for OpenCV and building packages
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
-    python3-venv \
+    python3-dev \
+    build-essential \
     libgl1-mesa-glx \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
-# Install Node dependencies
+# Copy package files and install Node dependencies
 COPY package*.json ./
 RUN npm install
 
-# Install Python dependencies
+# Copy Python requirements and install Python dependencies
+# We use the CPU-only version of torch to save space and memory
 COPY requirements.txt ./
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch
+RUN pip3 install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torchvision
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copy all files
+# Copy the rest of the application
 COPY . .
 
-# 🔥 BUILD TYPESCRIPT (IMPORTANT)
-RUN npm run build:server
+# Build the frontend
+RUN npm run build
 
-# Expose port
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Start server (compiled JS)
-CMD ["node", "dist/server.js"]
+# Start the application
+CMD ["npm", "start"]
