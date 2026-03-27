@@ -29,18 +29,24 @@ const upload = multer({ storage });
 app.use(cors());
 app.use(express.json());
 
+let isPredicting = false;
+
 // API routes
 app.post("/api/predict", upload.single("image"), (req: any, res: any) => {
+  if (isPredicting) {
+    return res.status(429).json({ error: "Server is busy processing another request. Please wait a few seconds." });
+  }
+
   if (!req.file) {
     return res.status(400).json({ error: "No image file uploaded" });
   }
 
+  isPredicting = true;
   const { age, gender, smoking_years } = req.body;
   const imagePath = req.file.path;
 
   // Call Python script for inference
-  // We'll pass the image path and metadata as arguments
-  // On Windows, the command is usually 'python', on Linux/Mac 'python3'
+  // ... (rest of the logic)
   let pythonCmd = process.platform === "win32" ? "python" : "python3";
   
   // Robust check: if python3 fails, try python
@@ -81,6 +87,7 @@ app.post("/api/predict", upload.single("image"), (req: any, res: any) => {
   });
 
   pythonProcess.on("close", (code) => {
+    isPredicting = false;
     // Clean up uploaded file
     try {
       if (fs.existsSync(imagePath)) {
@@ -89,7 +96,7 @@ app.post("/api/predict", upload.single("image"), (req: any, res: any) => {
     } catch (e) {
       console.error("Error deleting file:", e);
     }
-
+    // ... (rest of the logic)
     if (code !== 0) {
       console.error("Python script error:", error);
       return res.status(500).json({ error: "Prediction failed", details: error });
@@ -122,8 +129,8 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
 
 startServer();

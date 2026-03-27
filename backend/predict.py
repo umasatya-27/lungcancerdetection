@@ -9,6 +9,10 @@ from PIL import Image
 import numpy as np
 import cv2
 import os
+import gc
+
+# Set threads to 1 to save memory and CPU
+torch.set_num_threads(1)
 
 # Define the fusion model architecture
 class FusionModel(nn.Module):
@@ -206,10 +210,10 @@ def predict():
                 print(f"DEBUG: Could not list {search_dir}: {str(e)}", file=sys.stderr, flush=True)
                 return None
 
-            # 1. Prefer .pth or .pt FILES first
+            # 1. Prefer .pth, .pt, or .htp FILES first
             for item in items:
                 full_path = os.path.join(search_dir, item)
-                if (item.endswith('.pth') or item.endswith('.pt')) and os.path.isfile(full_path):
+                if (item.endswith('.pth') or item.endswith('.pt') or item.endswith('.htp')) and os.path.isfile(full_path):
                     return full_path
             
             # 2. Check if current dir is a model directory (contains data.pkl)
@@ -396,8 +400,11 @@ def predict():
         else:
             # Real inference
             img_tensor.requires_grad = True
-            output = model(img_tensor, meta_tensor)
-            logits = output.detach().numpy()[0]
+            
+            # Use inference mode for the main pass to save memory
+            with torch.inference_mode():
+                output = model(img_tensor, meta_tensor)
+                logits = output.detach().numpy()[0]
             
             # Apply clinical bias - if a match is found, it heavily influences the result
             # We use a very high multiplier (5.0) to ensure the clinical rules are respected
@@ -420,7 +427,13 @@ def predict():
             print("="*30 + "\n", file=sys.stderr, flush=True)
             
             prediction_idx = np.argmax(probs)
+            
+            # Grad-CAM needs gradients, so we run it separately
             heatmap_base64 = generate_gradcam(model, img_tensor, meta_tensor, prediction_idx, rgb_img)
+            
+            # Clean up memory
+            del output, biased_output
+            gc.collect()
         
         result = {
             "prediction": classes[prediction_idx],
