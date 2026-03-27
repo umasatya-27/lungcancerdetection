@@ -25,11 +25,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all files
 COPY . .
 
-# ❌ REMOVE THIS (causing error)
-# RUN npm run build
+# 🔥 BUILD TYPESCRIPT (IMPORTANT)
+RUN npm run build:server
 
 # Expose port
 EXPOSE 3000
 
-# Start server
-CMD ["npm", "start"]
+# Start server (compiled JS)
+CMD ["node", "dist/server.js"]
