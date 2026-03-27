@@ -45,25 +45,10 @@ app.post("/api/predict", upload.single("image"), (req: any, res: any) => {
   const { age, gender, smoking_years } = req.body;
   const imagePath = req.file.path;
 
-  // Call Python script for inference
-  // ... (rest of the logic)
-  let pythonCmd = process.platform === "win32" ? "python" : "python3";
+  // Use python3 by default on Linux/Render, python on Windows
+  const pythonCmd = process.platform === "win32" ? "python" : "python3";
   
-  // Robust check: if python3 fails, try python
-  try {
-    const { execSync } = require("child_process");
-    if (process.platform !== "win32") {
-      try {
-        execSync("python3 --version", { stdio: "ignore" });
-      } catch (e) {
-        pythonCmd = "python";
-      }
-    }
-  } catch (e) {
-    // Fallback to default
-  }
-  
-  console.log(`Using Python command: ${pythonCmd}`);
+  console.log(`Executing prediction with: ${pythonCmd}`);
 
   const pythonProcess = spawn(pythonCmd, [
     path.join(process.cwd(), "backend", "predict.py"),
