@@ -40,7 +40,9 @@ def predict():
                     break
         
         if not os.path.exists(model_path):
-            raise FileNotFoundError("model.onnx not found. Please upload it to GitHub.")
+            error_msg = "model.onnx not found. Please convert your .pth file to ONNX and upload it to your repository."
+            print(json.dumps({"error": error_msg}))
+            sys.exit(0) # Exit with 0 so the server can parse the JSON error message
 
         # Load ONNX model (Very light on RAM!)
         session = ort.InferenceSession(model_path)

@@ -231,7 +231,13 @@ export default function App() {
                         <input 
                           type="number" 
                           value={age}
-                          onChange={(e) => setAge(e.target.value)}
+                          min="0"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || parseInt(val) >= 0) {
+                              setAge(val);
+                            }
+                          }}
                           placeholder="e.g. 55"
                           className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
@@ -255,7 +261,13 @@ export default function App() {
                       <input 
                         type="number" 
                         value={smokingYears}
-                        onChange={(e) => setSmokingYears(e.target.value)}
+                        min="0"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || parseInt(val) >= 0) {
+                            setSmokingYears(val);
+                          }
+                        }}
                         placeholder="e.g. 20"
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
